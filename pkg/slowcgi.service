@@ -1,0 +1,14 @@
+[Unit]
+Description=FastCGI to CGI wrapper server
+Documentation=man:slowcgi(8)
+After=syslog.target network.target nss-user-lookup.target
+
+[Service]
+# You probably will need to change the SLOWCGI_OPTIONS setting in this
+# sysconfig file to match your environment.  The default is to run as wwwrun,
+# chroot to ~wwwrun, and place the socket in ~wwwrun/slowcgi.sock.
+EnvironmentFile=-/etc/sysconfig/slowcgi
+ExecStart=/usr/local/sbin/slowcgi -d $SLOWCGI_OPTIONS
+
+[Install]
+WantedBy=multi-user.target

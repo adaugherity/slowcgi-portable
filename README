@@ -1,0 +1,34 @@
+Portable version of OpenBSD slowcgi
+===================================
+slowcgi(8) is a FastCGI to CGI wrapper, which allows you to run CGI commands
+under web servers which only speak FastCGI, e.g. OpenBSD httpd or nginx.
+
+Version: 6.3
+
+Version numbers will match the OpenBSD version; see their history at
+<https://cvsweb.openbsd.org/cgi-bin/cvsweb/src/usr.sbin/slowcgi/>.
+
+
+Inspired by the FreeBSD port at <https://github.com/koue/slowcgi>, and
+ported to Linux by making use of libbsd <https://libbsd.freedesktop.org/> and
+an implementation of getdtablecount(2) by Duncan Overbruck
+<https://github.com/Duncaen/lobase>.
+
+The "portable" name is currently not very accurate as this has only been built
+on Linux (glibc & GNU make).
+
+
+LICENSE: As part of the OpenBSD project, slowcgi is covered by the ISC license.
+All modifications are released under the same license.
+
+
+Patch series numbering:
+patch-00x: issues affecting OpenBSD also, preferably reported to them
+patch-01x: general portability patches
+patch-1xx: distro-specific patches
+
+
+Build deps: pkg-config libevent-devel libbsd-devel
+Technically can be built without pkg-config, but it simplifies things.
+
+All files in dist/ are unmodified upstream sources.

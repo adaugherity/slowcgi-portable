@@ -1,0 +1,27 @@
+Linux (glibc) needs to include grp.h for setgroups().
+
+An implementation of the OpenBSD getdtablecount() syscall is defined in
+getdtablecount.c, copied from <https://github.com/Duncaen/lobase>.
+
+--- slowcgi.c	2018-07-26 13:17:45.470183144 -0500
++++ slowcgi.c	2018-07-25 21:17:23.588988530 -0500
+@@ -38,6 +38,10 @@
+ #include <string.h>
+ #include <syslog.h>
+ #include <unistd.h>
++#ifdef __linux__
++#include <grp.h>
++#include "getdtablecount.h"
++#endif
+ 
+ #define TIMEOUT_DEFAULT		 120
+ #define SLOWCGI_USER		 "www"
+--- getdtablecount.c.orig	2018-07-27 16:51:04.519697857 -0500
++++ getdtablecount.c	2018-07-27 16:52:17.831268055 -0500
+@@ -1,5 +1,6 @@
+ #include <sys/types.h>
+ #include <dirent.h>
++#include "getdtablecount.h"
+ 
+ #ifdef __linux__
+ int

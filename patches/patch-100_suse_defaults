@@ -1,0 +1,55 @@
+SUSE distros ship a 'wwwrun' user instead of 'www'.  The compile-time default
+user *must* exist or slowcgi will not start, even with the -u option.
+
+--- slowcgi.c	2018-07-26 13:27:19.518389330 -0500
++++ slowcgi.c	2018-07-26 13:35:27.667258224 -0500
+@@ -44,7 +44,7 @@
+ #endif
+ 
+ #define TIMEOUT_DEFAULT		 120
+-#define SLOWCGI_USER		 "www"
++#define SLOWCGI_USER		 "wwwrun"
+ 
+ #define FCGI_CONTENT_SIZE	 65535
+ #define FCGI_PADDING_SIZE	 255
+@@ -269,7 +269,7 @@
+ struct slowcgi_proc	slowcgi_proc;
+ int			debug = 0;
+ int			on = 1;
+-char			*fcgi_socket = "/var/www/run/slowcgi.sock";
++char			*fcgi_socket = "/var/lib/wwwrun/slowcgi.sock";
+ 
+ int
+ main(int argc, char *argv[])
+--- slowcgi.8	2017-10-17 17:47:58.000000000 -0500
++++ slowcgi.8	2018-07-26 13:34:06.459779115 -0500
+@@ -46,15 +46,15 @@
+ .Pp
+ .Nm
+ opens a socket at
+-.Pa /var/www/run/slowcgi.sock ,
+-owned by www:www,
++.Pa /var/lib/wwwrun/slowcgi.sock ,
++owned by wwwrun:www,
+ with permissions 0660.
+ It will then
+ .Xr chroot 8
+ to
+-.Pa /var/www
++.Pa /var/lib/wwwrun
+ and drop privileges to user
+-.Qq www .
++.Qq wwwrun .
+ .Pp
+ The options are as follows:
+ .Bl -tag -width Ds
+@@ -78,7 +78,8 @@
+ .It Fl u Ar user
+ Drop privileges to
+ .Ar user
+-instead of default user www.
++instead of default user wwwrun, and chroot to that user's home directory,
++unless you specify otherwise.
+ .El
+ .Sh SEE ALSO
+ .Xr httpd 8

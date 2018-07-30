@@ -1,0 +1,20 @@
+Listen on the socket after parsing the user option, so it is owned by that user
+rather than the default www.
+--- slowcgi.c	2018-07-25 20:46:56.358667880 -0500
++++ slowcgi.c	2018-07-26 15:14:52.840052633 -0500
+@@ -330,13 +330,13 @@
+ 	if (pw == NULL)
+ 		lerrx(1, "no %s user", SLOWCGI_USER);
+ 
+-	fd = slowcgi_listen(fcgi_socket, pw);
+-
+ 	lwarnx("slowcgi_user: %s", slowcgi_user);
+ 	pw = getpwnam(slowcgi_user);
+ 	if (pw == NULL)
+ 		lerrx(1, "no %s user", slowcgi_user);
+ 
++	fd = slowcgi_listen(fcgi_socket, pw);
++
+ 	if (chrootpath == NULL)
+ 		chrootpath = pw->pw_dir;
+ 

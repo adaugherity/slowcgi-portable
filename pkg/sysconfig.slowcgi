@@ -1,0 +1,9 @@
+## Path:        Network/WWW/slowcgi
+## Description: slowcgi configuration
+
+## Type:	string
+## Default:	""
+#
+# Options used when starting slowcgi; see slowcgi(8) for details.
+# The default chroot may be too restrictive for your needs.
+SLOWCGI_OPTIONS=""

@@ -1,0 +1,26 @@
+Currently only OpenBSD supports pledge(2).
+
+--- slowcgi.c	2018-07-25 20:46:56.358667880 -0500
++++ slowcgi.c	2018-07-26 13:16:00.626876576 -0500
+@@ -353,8 +353,10 @@
+ 	    setresuid(pw->pw_uid, pw->pw_uid, pw->pw_uid))
+ 		lerr(1, "unable to revoke privs");
+ 
++#ifdef __OpenBSD__
+ 	if (pledge("stdio rpath unix proc exec", NULL) == -1)
+ 		lerr(1, "pledge");
++#endif
+ 
+ 	SLIST_INIT(&slowcgi_proc.requests);
+ 	event_init();
+@@ -918,8 +920,10 @@
+ 		return;
+ 	case 0:
+ 		/* Child process */
++#ifdef __OpenBSD__
+ 		if (pledge("stdio rpath exec", NULL) == -1)
+ 			lerr(1, "pledge");
++#endif
+ 		close(s_in[0]);
+ 		close(s_out[0]);
+ 		close(s_err[0]);
