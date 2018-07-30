@@ -8,6 +8,7 @@ prefix = /usr/local
 sbindir = ${prefix}/sbin
 mandir = ${prefix}/man
 
+VER = 6.3
 #CC = cc
 # CFLAGS necessary for building with glibc + libbsd
 # (glibc < 2.20: -D_BSD_SOURCE instead of -D_DEFAULT_SOURCE)
@@ -32,7 +33,7 @@ objects := slowcgi.o getdtablecount.o
 dist := slowcgi.c slowcgi.8 getdtablecount.c
 
 all: patch slowcgi
-	
+
 slowcgi: $(objects)
 
 $(dist): extract
@@ -59,5 +60,12 @@ extract:
 patch: extract
 	for f in patches/patch-*; do echo $$f; patch -p0 < $$f; done
 	echo "Makefile signal - patch done" > patch
-	
+
+# use stash to include uncommitted changes in the git archive
+# This does not include *untracked* files, so if you add a new patch, 'git add'
+# it before running 'make tarball'.
+tarball:
+	my_stash=`git stash create` ;\
+	git archive --format=tar.gz --prefix=slowcgi-$(VER)/ -o slowcgi-$(VER).tar.gz $${my_stash:-HEAD}
+
 .SILENT: extract patch

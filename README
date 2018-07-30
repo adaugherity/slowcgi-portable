@@ -32,3 +32,13 @@ Build deps: pkg-config libevent-devel libbsd-devel
 Technically can be built without pkg-config, but it simplifies things.
 
 All files in dist/ are unmodified upstream sources.
+
+Installation:
+  make
+  [sudo] make install [prefix=...] [mandir=...]
+
+To build an RPM:
+  make tarball
+  rpmbuild -ta slowcgi-$version.tar.gz
+The RPM includes a systemd service, which reads /etc/sysconfig/slowcgi for
+program options, if present.

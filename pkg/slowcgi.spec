@@ -27,7 +27,7 @@ protocol.  It executes the requested CGI script and translates its output back
 to the FastCGI protocol.
 
 %prep
-%setup -q -n %{name}
+%setup -q
 make patch
 
 %build
