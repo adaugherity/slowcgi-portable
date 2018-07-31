@@ -1,10 +1,15 @@
+# Linux port of OpenBSD slowcgi
+#
+# spec file for openSUSE 15.0
+# TODO: CentOS 7
+
 Name:           slowcgi
 Version:        6.3
 Release:        1
-Summary:        FastCGI to CGI wrapper server
+Summary:        OpenBSD FastCGI to CGI wrapper server
 License:        ISC
-#Group:          
-#Url:            
+Group:          Productivity/Networking/Web/Servers
+Url:            https://github.com/adaugherity/slowcgi-portable
 Source0:        %{name}-%{version}.tar.gz
 BuildRequires:  pkgconfig(libbsd-overlay)
 BuildRequires:	pkgconfig(libevent)
@@ -37,7 +42,7 @@ make %{?_smp_mflags}
 %make_install prefix=/usr mandir=%{_mandir}
 install -D -m 644 pkg/slowcgi.service %{buildroot}%{_unitdir}/slowcgi.service
 install -D -m 644 pkg/sysconfig.slowcgi %{buildroot}%{_fillupdir}/sysconfig.slowcgi
-
+ln -s service %{buildroot}/usr/sbin/rcslowcgi
 
 %pre
 %service_add_pre slowcgi.service
@@ -54,6 +59,7 @@ install -D -m 644 pkg/sysconfig.slowcgi %{buildroot}%{_fillupdir}/sysconfig.slow
 
 %files
 %defattr(-,root,root)
+/usr/sbin/rcslowcgi
 /usr/sbin/slowcgi
 # man page is automatically compressed
 %{_mandir}/man8/slowcgi.8.gz
