@@ -3,15 +3,15 @@
 # spec file for openSUSE 15.0
 # TODO: CentOS 7
 
-Name:           slowcgi
-Version:        6.3
-Release:        1
-Summary:        OpenBSD FastCGI to CGI wrapper server
-License:        ISC
-Group:          Productivity/Networking/Web/Servers
-Url:            https://github.com/adaugherity/slowcgi-portable
-Source0:        %{name}-%{version}.tar.gz
-BuildRequires:  pkgconfig(libbsd-overlay)
+Name:		slowcgi
+Version:	6.3
+Release:	1
+Summary:	OpenBSD FastCGI to CGI wrapper server
+License:	ISC
+Group:		Productivity/Networking/Web/Servers
+Url:		https://github.com/adaugherity/slowcgi-portable
+Source0:	%{name}-%{version}.tar.gz
+BuildRequires:	pkgconfig(libbsd-overlay)
 BuildRequires:	pkgconfig(libevent)
 BuildRequires:	make
 BuildRequires:	gcc
