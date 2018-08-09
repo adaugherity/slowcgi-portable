@@ -12,7 +12,7 @@ user *must* exist or slowcgi will not start, even with the -u option.
  
  #define FCGI_CONTENT_SIZE	 65535
  #define FCGI_PADDING_SIZE	 255
-@@ -269,7 +269,7 @@
+@@ -270,7 +270,7 @@
  struct slowcgi_proc	slowcgi_proc;
  int			debug = 0;
  int			on = 1;
@@ -21,9 +21,9 @@ user *must* exist or slowcgi will not start, even with the -u option.
  
  int
  main(int argc, char *argv[])
---- slowcgi.8	2017-10-17 17:47:58.000000000 -0500
-+++ slowcgi.8	2018-07-26 13:34:06.459779115 -0500
-@@ -46,15 +46,15 @@
+--- slowcgi.8	2018-08-09 14:40:51.869804185 -0500
++++ slowcgi.8	2018-08-09 14:40:42.369864309 -0500
+@@ -47,15 +47,15 @@
  .Pp
  .Nm
  opens a socket at
@@ -43,13 +43,21 @@ user *must* exist or slowcgi will not start, even with the -u option.
  .Pp
  The options are as follows:
  .Bl -tag -width Ds
-@@ -78,7 +78,8 @@
+@@ -78,14 +78,14 @@
+ .Ar socket .
+ .It Fl U Ar user
+ change the owner of
+-.Pa /var/www/run/slowcgi.sock
++.Pa /var/lib/wwwrun/slowcgi.sock ,
+ to
+ .Ar user
+-and its primary group instead of the default www:www.
++and its primary group instead of the default wwwrun:www.
  .It Fl u Ar user
  Drop privileges to
  .Ar user
--instead of default user www.
-+instead of default user wwwrun, and chroot to that user's home directory,
-+unless you specify otherwise.
- .El
- .Sh SEE ALSO
- .Xr httpd 8
+-instead of default user www and
++instead of default user wwwrun and
+ .Xr chroot 8
+ to
+ the home directory of

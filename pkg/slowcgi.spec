@@ -11,7 +11,7 @@
 
 Name:		slowcgi
 Version:	6.3
-Release:	2
+Release:	3
 Summary:	OpenBSD FastCGI to CGI wrapper server
 License:	ISC
 Group:		Productivity/Networking/Web/Servers
@@ -109,6 +109,8 @@ install -D -m 644 pkg/sysconfig.slowcgi %{buildroot}/etc/sysconfig/slowcgi
 %doc README
 
 %changelog
+* Tue Aug 09 2018 adaugherity@tamu.edu 6.3-3
+- Update from upstream -- add '-U socket_user' option.
 * Tue Aug 07 2018 adaugherity@tamu.edu 6.3-2
 - Build on CentOS 7 also.
 - Switch to upstream %%systemd_* macros; the SUSE %%service_* macros also
