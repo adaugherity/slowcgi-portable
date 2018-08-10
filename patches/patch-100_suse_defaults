@@ -1,6 +1,8 @@
-SUSE distros ship a 'wwwrun' user instead of 'www'.  The compile-time default
-user *must* exist or slowcgi will not start, even with the -u option.
+Default to the nginx user, since that's the most likely use case for slowcgi
+on Linux.  The /run/nginx socket directory must already exist (it is created
+by this RPM).
 
+This patch works for Red hat distros also.
 --- slowcgi.c	2018-07-26 13:27:19.518389330 -0500
 +++ slowcgi.c	2018-07-26 13:35:27.667258224 -0500
 @@ -44,7 +44,7 @@
@@ -8,7 +10,7 @@ user *must* exist or slowcgi will not start, even with the -u option.
  
  #define TIMEOUT_DEFAULT		 120
 -#define SLOWCGI_USER		 "www"
-+#define SLOWCGI_USER		 "wwwrun"
++#define SLOWCGI_USER		 "nginx"
  
  #define FCGI_CONTENT_SIZE	 65535
  #define FCGI_PADDING_SIZE	 255
@@ -17,7 +19,7 @@ user *must* exist or slowcgi will not start, even with the -u option.
  int			debug = 0;
  int			on = 1;
 -char			*fcgi_socket = "/var/www/run/slowcgi.sock";
-+char			*fcgi_socket = "/var/lib/wwwrun/slowcgi.sock";
++char			*fcgi_socket = "/run/nginx/slowcgi.sock";
  
  int
  main(int argc, char *argv[])
@@ -29,17 +31,17 @@ user *must* exist or slowcgi will not start, even with the -u option.
  opens a socket at
 -.Pa /var/www/run/slowcgi.sock ,
 -owned by www:www,
-+.Pa /var/lib/wwwrun/slowcgi.sock ,
-+owned by wwwrun:www,
++.Pa /run/nginx/slowcgi.sock ,
++owned by nginx:nginx,
  with permissions 0660.
  It will then
  .Xr chroot 8
  to
 -.Pa /var/www
-+.Pa /var/lib/wwwrun
++.Pa /var/lib/nginx
  and drop privileges to user
 -.Qq www .
-+.Qq wwwrun .
++.Qq nginx .
  .Pp
  The options are as follows:
  .Bl -tag -width Ds
@@ -48,16 +50,16 @@ user *must* exist or slowcgi will not start, even with the -u option.
  .It Fl U Ar user
  change the owner of
 -.Pa /var/www/run/slowcgi.sock
-+.Pa /var/lib/wwwrun/slowcgi.sock ,
++.Pa /run/nginx/slowcgi.sock ,
  to
  .Ar user
 -and its primary group instead of the default www:www.
-+and its primary group instead of the default wwwrun:www.
++and its primary group instead of the default nginx:nginx.
  .It Fl u Ar user
  Drop privileges to
  .Ar user
 -instead of default user www and
-+instead of default user wwwrun and
++instead of default user nginx and
  .Xr chroot 8
  to
  the home directory of

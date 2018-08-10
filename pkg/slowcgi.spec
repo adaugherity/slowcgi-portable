@@ -11,7 +11,7 @@
 
 Name:		slowcgi
 Version:	6.3
-Release:	3
+Release:	4
 Summary:	OpenBSD FastCGI to CGI wrapper server
 License:	ISC
 Group:		Productivity/Networking/Web/Servers
@@ -39,8 +39,8 @@ BuildRequires: systemd-rpm-macros
 # https://build.opensuse.org/request/show/576778
 %define systemd_post() \
 if [ $1 -eq 1 ] ; then \
-        # Initial installation \
-        systemctl preset %{?*} >/dev/null 2>&1 || : \
+	# Initial installation \
+	systemctl preset %{?*} >/dev/null 2>&1 || : \
 fi \
 %{nil}
 %endif
@@ -67,6 +67,7 @@ make %{?_smp_mflags}
 %install
 %make_install prefix=/usr mandir=%{_mandir}
 install -D -m 644 pkg/slowcgi.service %{buildroot}%{_unitdir}/slowcgi.service
+install -D -m 644 pkg/tmpfiles_slowcgi-nginx.conf %{buildroot}%{_tmpfilesdir}/slowcgi-nginx.conf
 
 %if 0%{?suse_version}
 ln -s service %{buildroot}/usr/sbin/rcslowcgi
@@ -80,6 +81,7 @@ install -D -m 644 pkg/sysconfig.slowcgi %{buildroot}/etc/sysconfig/slowcgi
 
 %post
 %systemd_post slowcgi.service
+%tmpfiles_create %{_tmpfilesdir}/slowcgi-nginx.conf
 %if 0%{?suse_version}
 %fillup_only
 %endif
@@ -106,10 +108,20 @@ install -D -m 644 pkg/sysconfig.slowcgi %{buildroot}/etc/sysconfig/slowcgi
 # man page is automatically compressed
 %{_mandir}/man8/slowcgi.8.gz
 %{_unitdir}/slowcgi.service
+%{_tmpfilesdir}/slowcgi-nginx.conf
 %doc README
 
 %changelog
-* Tue Aug 09 2018 adaugherity@tamu.edu 6.3-3
+* Fri Aug 10 2018 adaugherity@tamu.edu 6.3-4
+- Default to the nginx user for both socket & CGI, since slowcgi is more likely
+  to be used with nginx, than with other web servers (e.g. apache) that
+  natively support CGI.
+  * This also allows the same "distro defaults" patch to be used on both SUSE
+    and Red Hat, as both use an 'nginx' user with home directory
+    /var/lib/nginx, whereas the apache users are different.
+- Add tmpfiles.d entry to create a /run/nginx directory; placing the socket
+  here resolves SELinux issues on RHEL 7.
+* Thu Aug 09 2018 adaugherity@tamu.edu 6.3-3
 - Update from upstream -- add '-U socket_user' option.
 * Tue Aug 07 2018 adaugherity@tamu.edu 6.3-2
 - Build on CentOS 7 also.
