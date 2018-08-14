@@ -4,9 +4,11 @@ Documentation=man:slowcgi(8)
 After=syslog.target network.target nss-user-lookup.target
 
 [Service]
-# You probably will need to change the SLOWCGI_OPTIONS setting in the
-# sysconfig file to match your environment.  The default is to run as wwwrun,
-# chroot to ~wwwrun, and place the socket in ~wwwrun/slowcgi.sock.
+# You may need to change the SLOWCGI_OPTIONS setting in the sysconfig file to
+# match your environment and/or configure your CGI applications to run
+# chrooted.  The default is to use the nginx user for both running
+# CGI applications and as the socket owner, chroot to ~nginx, and place the
+# socket at /run/nginx/slowcgi.sock.
 EnvironmentFile=-/etc/sysconfig/slowcgi
 ExecStart=/usr/sbin/slowcgi $SLOWCGI_OPTIONS
 Type=forking
