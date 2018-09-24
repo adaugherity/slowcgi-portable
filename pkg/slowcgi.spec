@@ -26,24 +26,22 @@ BuildRequires:	gcc
 BuildRoot:	%{_tmppath}/%{name}-%{version}-build
 
 %if 0%{?suse_version}
-BuildRequires: systemd-rpm-macros
-# build a debuginfo package
-%debug_package
+%if %suse_version < 1500
+# systemd_post definition is incorrect in older releases, before this patch
+# https://build.opensuse.org/request/show/576778
+BuildRequires:	systemd-rpm-macros >= 3-10.9.1
+%else
+# Leap 15.0 is good, but its version tag (e.g. 3-lp150.5.20) complicates version comparisons
+BuildRequires:	systemd-rpm-macros
+%endif
+
 # compat for _fillupdir location change
 %if ! %{defined _fillupdir}
 %define _fillupdir /var/adm/fillup-templates
 %endif
 
-%if %suse_version < 1500
-# systemd_post definition is incorrect in older versions
-# https://build.opensuse.org/request/show/576778
-%define systemd_post() \
-if [ $1 -eq 1 ] ; then \
-	# Initial installation \
-	systemctl preset %{?*} >/dev/null 2>&1 || : \
-fi \
-%{nil}
-%endif
+# build a debuginfo package
+%debug_package
 
 %else
 %if 0%{?rhel}
@@ -119,6 +117,12 @@ install -D -m 644 pkg/sysconfig.slowcgi %{buildroot}/etc/sysconfig/slowcgi
   * When calculating the fd limit before accepting a new connection also
     account for the inflight fds caused by the new connection.
 - Dropped patch for socket user (committed upstream).
+
+* Mon Sep 24 2018 adaugherity@tamu.edu 6.3-5
+- %%systemd_post has been fixed on 42.3/SLES 12 SP3, so buildreq the fixed
+  version instead of redefining the macro.
+  * Reorder if suse_version stuff -- %%debug_package needs to come later, since
+    it defines a subpackage.
 
 * Fri Aug 10 2018 adaugherity@tamu.edu 6.3-4
 - Default to the nginx user for both socket & CGI, since slowcgi is more likely
