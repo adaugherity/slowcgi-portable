@@ -2,16 +2,16 @@
 #
 # spec file for SUSE & Red Hat distros
 # Tested with:
-#   openSUSE Leap (42.3, 15.0)
-#   SLES (12 SP3, 15)
+#   openSUSE Leap (42.3, 15.1)
+#   SLES (12 SP4, 15 SP1)
 #   CentOS 7.5
 #
 # SLES 12:	enable PackageHub extension for libbsd (and nginx)
 # CentOS 7:	use EPEL 7 for libbsd (and nginx)
 
 Name:		slowcgi
-Version:	6.3
-Release:	4
+Version:	6.5
+Release:	1
 Summary:	OpenBSD FastCGI to CGI wrapper server
 License:	ISC
 Group:		Productivity/Networking/Web/Servers
@@ -112,6 +112,14 @@ install -D -m 644 pkg/sysconfig.slowcgi %{buildroot}/etc/sysconfig/slowcgi
 %doc README
 
 %changelog
+* Mon Aug 05 2019 adaugherity@tamu.edu 6.5-1
+- Sync upstream sources with OpenBSD 6.5:
+  * Make the owner of fcgi socket configurable.
+  * Call daemon with 0 as first argument so that it changes the cwd to /.
+  * When calculating the fd limit before accepting a new connection also
+    account for the inflight fds caused by the new connection.
+- Dropped patch for socket user (committed upstream).
+
 * Fri Aug 10 2018 adaugherity@tamu.edu 6.3-4
 - Default to the nginx user for both socket & CGI, since slowcgi is more likely
   to be used with nginx, than with other web servers (e.g. apache) that
@@ -121,11 +129,14 @@ install -D -m 644 pkg/sysconfig.slowcgi %{buildroot}/etc/sysconfig/slowcgi
     /var/lib/nginx, whereas the apache users are different.
 - Add tmpfiles.d entry to create a /run/nginx directory; placing the socket
   here resolves SELinux issues on RHEL 7.
+
 * Thu Aug 09 2018 adaugherity@tamu.edu 6.3-3
 - Update from upstream -- add '-U socket_user' option.
+
 * Tue Aug 07 2018 adaugherity@tamu.edu 6.3-2
 - Build on CentOS 7 also.
 - Switch to upstream %%systemd_* macros; the SUSE %%service_* macros also
   handle upgrades from SysV init scripts, but we don't care about that.
+
 * Mon Jul 30 2018 adaugherity@tamu.edu 6.3-1
 - Initial port to Linux, built on openSUSE Leap 15.0.

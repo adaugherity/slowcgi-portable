@@ -48,9 +48,9 @@ This patch works for Red hat distros also.
 @@ -78,14 +78,14 @@
  .Ar socket .
  .It Fl U Ar user
- change the owner of
+ Change the owner of
 -.Pa /var/www/run/slowcgi.sock
-+.Pa /run/nginx/slowcgi.sock ,
++.Pa /run/nginx/slowcgi.sock
  to
  .Ar user
 -and its primary group instead of the default www:www.

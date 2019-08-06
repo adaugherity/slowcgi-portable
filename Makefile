@@ -8,7 +8,7 @@ prefix = /usr/local
 sbindir = ${prefix}/sbin
 mandir = ${prefix}/man
 
-VER = 6.3
+VER = 6.5
 #CC = cc
 # CFLAGS necessary for building with glibc + libbsd
 # (glibc < 2.20: -D_BSD_SOURCE instead of -D_DEFAULT_SOURCE)
