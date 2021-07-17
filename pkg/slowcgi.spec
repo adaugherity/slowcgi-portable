@@ -11,7 +11,7 @@
 
 Name:		slowcgi
 Version:	6.5
-Release:	1
+Release:	2
 Summary:	OpenBSD FastCGI to CGI wrapper server
 License:	ISC
 Group:		Productivity/Networking/Web/Servers
