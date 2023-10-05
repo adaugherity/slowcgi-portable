@@ -1,4 +1,4 @@
-/*	$OpenBSD: slowcgi.c,v 1.55 2018/10/19 08:13:34 claudio Exp $ */
+/*	$OpenBSD: slowcgi.c,v 1.64 2022/08/07 07:43:53 op Exp $ */
 /*
  * Copyright (c) 2013 David Gwynne <dlg@openbsd.org>
  * Copyright (c) 2013 Florian Obser <florian@openbsd.org>
@@ -40,6 +40,7 @@
 #include <unistd.h>
 
 #define TIMEOUT_DEFAULT		 120
+#define TIMEOUT_MAX		 (86400 * 365)
 #define SLOWCGI_USER		 "www"
 
 #define FCGI_CONTENT_SIZE	 65535
@@ -113,6 +114,7 @@ struct fcgi_stdin {
 TAILQ_HEAD(fcgi_stdin_head, fcgi_stdin);
 
 struct request {
+	LIST_ENTRY(request)		entry;
 	struct event			ev;
 	struct event			resp_ev;
 	struct event			tmo;
@@ -139,16 +141,11 @@ struct request {
 	int				inflight_fds_accounted;
 };
 
-struct requests {
-	SLIST_ENTRY(requests)	 entry;
-	struct request		*request;
-};
-SLIST_HEAD(requests_head, requests);
+LIST_HEAD(requests_head, request);
 
 struct slowcgi_proc {
 	struct requests_head	requests;
 	struct event		ev_sigchld;
-	struct event		ev_sigpipe;
 };
 
 struct fcgi_begin_request_body {
@@ -166,8 +163,7 @@ struct fcgi_end_request_body {
 __dead void	usage(void);
 int		slowcgi_listen(char *, struct passwd *);
 void		slowcgi_paused(int, short, void *);
-int		accept_reserve(int, struct sockaddr *, socklen_t *, int,
-		    volatile int *);
+int		accept_reserve(int, struct sockaddr *, socklen_t *, int, int *);
 void		slowcgi_accept(int, short, void *);
 void		slowcgi_request(int, short, void *);
 void		slowcgi_response(int, short, void *);
@@ -257,14 +253,15 @@ usage(void)
 {
 	extern char *__progname;
 	fprintf(stderr,
-	    "usage: %s [-d] [-p path] [-s socket] [-U user] [-u user]\n",
-	    __progname);
+	    "usage: %s [-dv] [-p path] [-s socket] [-t timeout] [-U user] "
+	    "[-u user]\n", __progname);
 	exit(1);
 }
 
 struct timeval		timeout = { TIMEOUT_DEFAULT, 0 };
 struct slowcgi_proc	slowcgi_proc;
 int			debug = 0;
+int			verbose = 0;
 int			on = 1;
 char			*fcgi_socket = "/var/www/run/slowcgi.sock";
 
@@ -279,6 +276,7 @@ main(int argc, char *argv[])
 	const char	*chrootpath = NULL;
 	const char	*sock_user = SLOWCGI_USER;
 	const char	*slowcgi_user = SLOWCGI_USER;
+	const char	*errstr;
 
 	/*
 	 * Ensure we have fds 0-2 open so that we have no fd overlaps
@@ -297,10 +295,10 @@ main(int argc, char *argv[])
 		}
 	}
 
-	while ((c = getopt(argc, argv, "dp:s:U:u:")) != -1) {
+	while ((c = getopt(argc, argv, "dp:s:t:U:u:v")) != -1) {
 		switch (c) {
 		case 'd':
-			debug = 1;
+			debug++;
 			break;
 		case 'p':
 			chrootpath = optarg;
@@ -308,11 +306,20 @@ main(int argc, char *argv[])
 		case 's':
 			fcgi_socket = optarg;
 			break;
+		case 't':
+			timeout.tv_sec = strtonum(optarg, 1, TIMEOUT_MAX, 
+			    &errstr);
+			if (errstr != NULL)
+				errx(1, "timeout is %s: %s", errstr, optarg);
+			break;
 		case 'U':
 			sock_user = optarg;
 			break;
 		case 'u':
 			slowcgi_user = optarg;
+			break;
+		case 'v':
+			verbose++;
 			break;
 		default:
 			usage();
@@ -362,7 +369,7 @@ main(int argc, char *argv[])
 	if (pledge("stdio rpath unix proc exec", NULL) == -1)
 		lerr(1, "pledge");
 
-	SLIST_INIT(&slowcgi_proc.requests);
+	LIST_INIT(&slowcgi_proc.requests);
 	event_init();
 
 	l = calloc(1, sizeof(*l));
@@ -375,11 +382,9 @@ main(int argc, char *argv[])
 
 	signal_set(&slowcgi_proc.ev_sigchld, SIGCHLD, slowcgi_sig_handler,
 	    &slowcgi_proc);
-	signal_set(&slowcgi_proc.ev_sigpipe, SIGPIPE, slowcgi_sig_handler,
-	    &slowcgi_proc);
+	signal(SIGPIPE, SIG_IGN);
 
 	signal_add(&slowcgi_proc.ev_sigchld, NULL);
-	signal_add(&slowcgi_proc.ev_sigpipe, NULL);
 
 	event_dispatch();
 	return (0);
@@ -406,8 +411,7 @@ slowcgi_listen(char *path, struct passwd *pw)
 		if (errno != ENOENT)
 			lerr(1, "slowcgi_listen: unlink %s", path);
 
-	old_umask = umask(S_IXUSR|S_IXGRP|S_IWOTH|S_IROTH|
-	    S_IXOTH);
+	old_umask = umask(S_IXUSR|S_IXGRP|S_IWOTH|S_IROTH|S_IXOTH);
 
 	if (bind(fd, (struct sockaddr *)&sun, sizeof(sun)) == -1)
 		lerr(1,"slowcgi_listen: bind: %s", path);
@@ -433,7 +437,7 @@ slowcgi_paused(int fd, short events, void *arg)
 
 int
 accept_reserve(int sockfd, struct sockaddr *addr, socklen_t *addrlen,
-	int reserve, volatile int *counter)
+    int reserve, int *counter)
 {
 	int ret;
 	if (getdtablecount() + reserve +
@@ -458,7 +462,6 @@ slowcgi_accept(int fd, short events, void *arg)
 	struct sockaddr_storage	 ss;
 	struct timeval		 backoff;
 	struct request		*c;
-	struct requests		*requests;
 	socklen_t		 len;
 	int			 s;
 
@@ -492,14 +495,6 @@ slowcgi_accept(int fd, short events, void *arg)
 		cgi_inflight--;
 		return;
 	}
-	requests = calloc(1, sizeof(*requests));
-	if (requests == NULL) {
-		lwarn("cannot calloc requests");
-		close(s);
-		cgi_inflight--;
-		free(c);
-		return;
-	}
 	c->fd = s;
 	c->buf_pos = 0;
 	c->buf_len = 0;
@@ -514,8 +509,7 @@ slowcgi_accept(int fd, short events, void *arg)
 	event_set(&c->resp_ev, s, EV_WRITE | EV_PERSIST, slowcgi_response, c);
 	evtimer_set(&c->tmo, slowcgi_timeout, c);
 	evtimer_add(&c->tmo, &timeout);
-	requests->request = c;
-	SLIST_INSERT_HEAD(&slowcgi_proc.requests, requests, entry);
+	LIST_INSERT_HEAD(&slowcgi_proc.requests, c, entry);
 }
 
 void
@@ -528,7 +522,6 @@ void
 slowcgi_sig_handler(int sig, short event, void *arg)
 {
 	struct request		*c;
-	struct requests		*ncs;
 	struct slowcgi_proc	*p;
 	pid_t			 pid;
 	int			 status;
@@ -538,12 +531,9 @@ slowcgi_sig_handler(int sig, short event, void *arg)
 	switch (sig) {
 	case SIGCHLD:
 		while ((pid = waitpid(WAIT_ANY, &status, WNOHANG)) > 0) {
-			c = NULL;
-			SLIST_FOREACH(ncs, &p->requests, entry)
-				if (ncs->request->script_pid == pid) {
-					c = ncs->request;
+			LIST_FOREACH(c, &p->requests, entry)
+				if (c->script_pid == pid)
 					break;
-				}
 			if (c == NULL) {
 				lwarnx("caught exit of unknown child %i", pid);
 				continue;
@@ -562,9 +552,6 @@ slowcgi_sig_handler(int sig, short event, void *arg)
 		}
 		if (pid == -1 && errno != ECHILD)
 			lwarn("waitpid");
-		break;
-	case SIGPIPE:
-		/* ignore */
 		break;
 	default:
 		lerr(1, "unexpected signal: %d", sig);
@@ -606,7 +593,7 @@ slowcgi_response(int fd, short events, void *arg)
 
 	while ((resp = TAILQ_FIRST(&c->response_head))) {
 		header = (struct fcgi_record_header*) resp->data;
-		if (debug)
+		if (debug > 1)
 			dump_fcgi_record("resp ", header);
 
 		n = write(fd, resp->data + resp->data_pos, resp->data_len);
@@ -708,6 +695,7 @@ parse_begin_request(uint8_t *buf, uint16_t n, struct request *c, uint16_t id)
 	SLIST_INIT(&c->env);
 	c->env_count = 0;
 }
+
 void
 parse_params(uint8_t *buf, uint16_t n, struct request *c, uint16_t id)
 {
@@ -842,7 +830,7 @@ parse_record(uint8_t *buf, size_t n, struct request *c)
 
 	h = (struct fcgi_record_header*) buf;
 
-	if (debug)
+	if (debug > 1)
 		dump_fcgi_record("", h);
 
 	if (n < sizeof(struct fcgi_record_header) + ntohs(h->content_len)
@@ -940,6 +928,8 @@ exec_cgi(struct request *c)
 		close(s_in[1]);
 		close(s_out[1]);
 		close(s_err[1]);
+
+		signal(SIGPIPE, SIG_DFL);
 
 		path = strrchr(c->script_name, '/');
 		if (path != NULL) {
@@ -1134,7 +1124,6 @@ cleanup_request(struct request *c)
 	struct fcgi_response	*resp;
 	struct fcgi_stdin	*stdin_node;
 	struct env_val		*env_entry;
-	struct requests		*ncs, *tcs;
 
 	evtimer_del(&c->tmo);
 	if (event_initialized(&c->ev))
@@ -1172,14 +1161,7 @@ cleanup_request(struct request *c)
 		TAILQ_REMOVE(&c->stdin_head, stdin_node, entry);
 		free(stdin_node);
 	}
-	SLIST_FOREACH_SAFE(ncs, &slowcgi_proc.requests, entry, tcs) {
-		if (ncs->request == c) {
-			SLIST_REMOVE(&slowcgi_proc.requests, ncs, requests,
-			    entry);
-			free(ncs);
-			break;
-		}
-	}
+	LIST_REMOVE(c, entry);
 	if (! c->inflight_fds_accounted)
 		cgi_inflight--;
 	free(c);
@@ -1291,12 +1273,10 @@ syslog_info(const char *fmt, ...)
 void
 syslog_debug(const char *fmt, ...)
 {
-	va_list ap;
-
-	if (!debug)
-		return;
-
-	va_start(ap, fmt);
-	vsyslog(LOG_DEBUG, fmt, ap);
-	va_end(ap);
+	if (verbose > 0) {
+		va_list ap;
+		va_start(ap, fmt);
+		vsyslog(LOG_DEBUG, fmt, ap);
+		va_end(ap);
+	}
 }

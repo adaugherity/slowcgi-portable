@@ -3,7 +3,7 @@ Portable version of OpenBSD slowcgi
 slowcgi(8) is a FastCGI to CGI wrapper, which allows you to run CGI commands
 under web servers which only speak FastCGI, e.g. OpenBSD httpd or nginx.
 
-Version: 6.5
+Version: 7.2
 
 Version numbers will match the OpenBSD version; see their history at
 <https://cvsweb.openbsd.org/cgi-bin/cvsweb/src/usr.sbin/slowcgi/>.

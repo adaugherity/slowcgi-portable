@@ -15,8 +15,8 @@ getdtablecount.c, copied from <https://github.com/Duncaen/lobase>.
 +#endif
  
  #define TIMEOUT_DEFAULT		 120
- #define SLOWCGI_USER		 "www"
---- getdtablecount.c.orig	2018-07-27 16:51:04.519697857 -0500
+ #define TIMEOUT_MAX		 (86400 * 365)
+--- getdtablecount.c	2018-07-27 16:51:04.519697857 -0500
 +++ getdtablecount.c	2018-07-27 16:52:17.831268055 -0500
 @@ -1,5 +1,6 @@
  #include <sys/types.h>

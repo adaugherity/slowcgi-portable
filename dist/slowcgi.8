@@ -1,4 +1,4 @@
-.\"   $OpenBSD: slowcgi.8,v 1.14 2018/08/13 16:54:50 florian Exp $
+.\"   $OpenBSD: slowcgi.8,v 1.17 2022/08/06 17:11:36 op Exp $
 .\"
 .\" Copyright (c) 2013 Florian Obser <florian@openbsd.org>
 .\"
@@ -14,7 +14,7 @@
 .\" ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 .\" OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 .\"
-.Dd $Mdocdate: August 13 2018 $
+.Dd $Mdocdate: August 6 2022 $
 .Dt SLOWCGI 8
 .Os
 .Sh NAME
@@ -22,9 +22,10 @@
 .Nd a FastCGI to CGI wrapper server
 .Sh SYNOPSIS
 .Nm
-.Op Fl d
+.Op Fl dv
 .Op Fl p Ar path
 .Op Fl s Ar socket
+.Op Fl t Ar timeout
 .Op Fl U Ar user
 .Op Fl u Ar user
 .Sh DESCRIPTION
@@ -76,6 +77,12 @@ effectively disables the chroot.
 .It Fl s Ar socket
 Create and bind to alternative local socket at
 .Ar socket .
+.It Fl t Ar timeout
+Terminate the request after
+.Ar timeout
+seconds instead of the default 120 seconds.
+The CGI script is left to run but its standard input, output and error
+will be closed.
 .It Fl U Ar user
 Change the owner of
 .Pa /var/www/run/slowcgi.sock
@@ -90,6 +97,8 @@ instead of default user www and
 to
 the home directory of
 .Ar user .
+.It Fl v
+Enable more verbose (debug) logging.
 .El
 .Sh SEE ALSO
 .Xr httpd 8

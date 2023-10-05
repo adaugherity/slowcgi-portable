@@ -2,16 +2,16 @@
 #
 # spec file for SUSE & Red Hat distros
 # Tested with:
-#   openSUSE Leap (42.3, 15.1)
-#   SLES (12 SP4, 15 SP1)
+#   openSUSE Leap (15.5)
+#   SLES (12 SP5, 15 SP5)
 #   CentOS 7.5
 #
 # SLES 12:	enable PackageHub extension for libbsd (and nginx)
 # CentOS 7:	use EPEL 7 for libbsd (and nginx)
 
 Name:		slowcgi
-Version:	6.5
-Release:	2
+Version:	7.2
+Release:	1
 Summary:	OpenBSD FastCGI to CGI wrapper server
 License:	ISC
 Group:		Productivity/Networking/Web/Servers
@@ -110,6 +110,24 @@ install -D -m 644 pkg/sysconfig.slowcgi %{buildroot}/etc/sysconfig/slowcgi
 %doc README
 
 %changelog
+* Thu Oct 05 2023 adaugherity@tamu.edu 7.2-1
+- Sync upstream sources with OpenBSD 7.4 (no changes since 7.2):
+  * Just a bit of KNF.
+  * Allow specifying -d multiple times. Only print the fcgi header data if
+    debug > 1 (-dd) since it adds a lot of noise to the output.
+  * accept_reserve() counter function argument doesn't need to be volatile.
+  * Ignore SIGPIPE by default and restore default behaviour before executing
+    the CGI.
+  * Use LIST instead of SLIST for requests. The way SLIST_REMOVE was used did
+    a double traverse of the list which now is replaced with no traversal at
+    all.  Also stop double wrapping requests just for the list.
+  * Stop sending debug logging to syslog (which would then drop it on the
+    floor) all the time. Instead debug logging must be requested with the
+    new -v flag.
+  * list -v with -d in SYNOPSIS, instead of seperately, and add -v to usage()
+  * add a -t flag to change the request timeout
+  * zap extra space in usage added by mistake in last commit.
+
 * Mon Aug 05 2019 adaugherity@tamu.edu 6.5-1
 - Sync upstream sources with OpenBSD 6.5:
   * Make the owner of fcgi socket configurable.
